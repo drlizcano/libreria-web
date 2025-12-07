@@ -1,21 +1,29 @@
-<%- include('layout', { title: 'Iniciar sesión', user: user }) %>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Iniciar sesión - Librería Web</title>
+</head>
+<body>
+  <h1>Iniciar sesión</h1>
 
-<h1>Iniciar sesión</h1>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p style="color:red;"><%= error %></p>
+  <% } %>
 
-<% if (error) { %>
-  <p style="color:red;"><%= error %></p>
-<% } %>
+  <form action="/auth/login" method="POST">
+    <div>
+      <label>Correo:</label>
+      <input type="email" name="email" required>
+    </div>
+    <div>
+      <label>Contraseña:</label>
+      <input type="password" name="password" required>
+    </div>
+    <button type="submit">Entrar</button>
+  </form>
 
-<form action="/auth/login" method="POST">
-  <div>
-    <label>Correo:</label>
-    <input type="email" name="email" required>
-  </div>
-  <div>
-    <label>Contraseña:</label>
-    <input type="password" name="password" required>
-  </div>
-  <button type="submit">Entrar</button>
-</form>
-
-<p><a href="/auth/register">Registrarse</a></p>
+  <p><a href="/auth/register">Ir a registro</a></p>
+  <p><a href="/">Volver al inicio</a></p>
+</body>
+</html>
