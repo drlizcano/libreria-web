@@ -9,7 +9,7 @@ const { User } = require('../models'); // models/index.js exporta { User, Book }
 router.get('/login', (req, res) => {
   res.render('login', {
     error: null,
-    user: res.locals.user, // por si el layout lo usa
+    user: res.locals.user,
   });
 });
 
@@ -26,7 +26,6 @@ router.post('/register', async (req, res) => {
   const { nombre, email, password } = req.body;
 
   try {
-    // Verificar si ya existe el correo
     const existingUser = await User.findOne({ where: { email } });
 
     if (existingUser) {
@@ -36,17 +35,14 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Encriptar contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Crear usuario
     await User.create({
       nombre,
       email,
       password: hashedPassword,
     });
 
-    // Redirigir al login después de registrar
     res.redirect('/auth/login');
   } catch (err) {
     console.error('Error en registro:', err);
@@ -62,7 +58,6 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Buscar usuario por email
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
@@ -72,7 +67,6 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Comparar contraseña
     const match = await bcrypt.compare(password, user.password);
 
     if (!match) {
@@ -82,8 +76,6 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Aquí podrías guardar datos en sesión.
-    // De momento solo redirigimos a la página de libros.
     res.redirect('/books');
   } catch (err) {
     console.error('Error en login:', err);

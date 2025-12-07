@@ -1,0 +1,25 @@
+<%- include('layout', { title: 'Registrarse', user: user }) %>
+
+<h1>Registrarse</h1>
+
+<% if (error) { %>
+  <p style="color:red;"><%= error %></p>
+<% } %>
+
+<form action="/auth/register" method="POST">
+  <div>
+    <label>Nombre:</label>
+    <input type="text" name="nombre" required>
+  </div>
+  <div>
+    <label>Correo:</label>
+    <input type="email" name="email" required>
+  </div>
+  <div>
+    <label>Contraseña:</label>
+    <input type="password" name="password" required>
+  </div>
+  <button type="submit">Crear cuenta</button>
+</form>
+
+<p><a href="/auth/login">Volver al login</a></p>

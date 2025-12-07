@@ -9,7 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
-// ───────────────── Middlewares básicos ─────────────────
+// ─────────── Middlewares básicos ───────────
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -21,22 +21,32 @@ app.use((req, res, next) => {
   next();
 });
 
-// ───────────────── Motor de vistas y estáticos ─────────────────
+// ─────────── Motor de vistas y estáticos ───────────
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ───────────────── Rutas ─────────────────
+// ─────────── Rutas de la app ───────────
 app.use('/books', bookRoutes);
 app.use('/auth', authRoutes);
 
-// Ruta raíz → redirige al login
-app.get('/', (req, res) => {
-  res.redirect('/auth/login');
+// Ruta de salud para probar fácilmente
+app.get('/health', (req, res) => {
+  res.json({ ok: true, message: 'libreria-web está corriendo' });
 });
 
-// ───────────────── Iniciar BD y servidor ─────────────────
+// 🔥 RUTA RAÍZ SIMPLE (SIN EJS)
+// Así aunque algo falle, SIEMPRE aparece este texto.
+app.get('/', (req, res) => {
+  res.send(`
+    <h1>Librería Web</h1>
+    <p>La aplicación está en funcionamiento.</p>
+    <p>Ir a <a href="/auth/login">/auth/login</a> para iniciar sesión.</p>
+  `);
+});
+
+// ─────────── Iniciar BD y servidor ───────────
 const PORT = process.env.PORT || 3000;
 
 initDb()
@@ -47,5 +57,10 @@ initDb()
   })
   .catch((err) => {
     console.error('No se pudo iniciar la aplicación:', err);
-    process.exit(1);
+    // IMPORTANTE: aun si falla la BD, dejamos el servidor encendido
+    app.listen(PORT, () => {
+      console.log(`Servidor iniciado con errores en la BD en puerto ${PORT}`);
+    });
   });
+
+module.exports = app;
