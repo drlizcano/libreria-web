@@ -5,7 +5,7 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 
 const { initDb } = require('./config/db');
-const { User, Book } = require('./models');  // 👈 ahora también importamos Book
+const { User, Book } = require('./models'); // 👈 Asegúrate que models/index.js exporta { User, Book }
 
 const app = express();
 
@@ -13,7 +13,7 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Definir "user" para las vistas EJS (por si luego las vuelves a usar)
+// Definir "user" para las vistas EJS (por si alguna las usa)
 app.use((req, res, next) => {
   if (typeof res.locals.user === 'undefined') {
     res.locals.user = null;
@@ -21,10 +21,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// ─────────── Motor de vistas y estáticos (ya no lo usaremos para /books, pero no estorba) ───────────
+// ─────────── Motor de vistas y estáticos (no rompe nada aunque no usemos EJS) ───────────
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ─────────── Función para HTML simple ───────────
@@ -59,6 +58,7 @@ app.get('/', (req, res) => {
 // ─────────── LOGIN (GET) ───────────
 app.get('/auth/login', (req, res) => {
   console.log('GET /auth/login');
+
   const html = pageTemplate(
     'Iniciar sesión - Librería Web',
     `
@@ -82,6 +82,7 @@ app.get('/auth/login', (req, res) => {
       <p><a href="/">Volver al inicio</a></p>
     `
   );
+
   res.send(html);
 });
 
@@ -106,8 +107,7 @@ app.post('/auth/login', async (req, res) => {
       );
     }
 
-    // Si quisieras, aquí guardarías sesión.
-    // Por ahora, al iniciar sesión correctamente → lista de libros.
+    // Si todo ok → lista de libros
     res.redirect('/books');
   } catch (err) {
     console.error('Error en login:', err);
@@ -118,9 +118,10 @@ app.post('/auth/login', async (req, res) => {
   }
 });
 
-// ─────────── REGISTER (GET) ───────────
+// ─────────── REGISTRO (GET) ───────────
 app.get('/auth/register', (req, res) => {
   console.log('GET /auth/register');
+
   const html = pageTemplate(
     'Registrarse - Librería Web',
     `
@@ -148,10 +149,11 @@ app.get('/auth/register', (req, res) => {
       <p><a href="/">Volver al inicio</a></p>
     `
   );
+
   res.send(html);
 });
 
-// ─────────── REGISTER (POST) ───────────
+// ─────────── REGISTRO (POST) ───────────
 app.post('/auth/register', async (req, res) => {
   const { nombre, email, password } = req.body;
 
@@ -183,7 +185,7 @@ app.post('/auth/register', async (req, res) => {
   }
 });
 
-// ─────────── LISTA DE LIBROS (SIN EJS) ───────────
+// ─────────── LISTA DE LIBROS (GET /books) ───────────
 app.get('/books', async (req, res) => {
   console.log('GET /books');
 
@@ -211,6 +213,7 @@ app.get('/books', async (req, res) => {
             ? '<p>No hay libros registrados.</p>'
             : `<ul>${listItems}</ul>`
         }
+        <p><a href="/books/new">Agregar nuevo libro</a></p>
         <p><a href="/">Volver al inicio</a></p>
       `
     );
@@ -224,6 +227,68 @@ app.get('/books', async (req, res) => {
         <h1>Error al obtener libros</h1>
         <p>${err.message}</p>
         <p><a href="/">Volver al inicio</a></p>
+      `
+    );
+    res.status(500).send(html);
+  }
+});
+
+// ─────────── FORMULARIO NUEVO LIBRO (GET /books/new) ───────────
+app.get('/books/new', (req, res) => {
+  const html = pageTemplate(
+    'Nuevo libro - Librería Web',
+    `
+      <h1>Agregar nuevo libro</h1>
+
+      <form action="/books/new" method="POST">
+        <div>
+          <label>Título:</label>
+          <input type="text" name="titulo" required>
+        </div>
+        <div>
+          <label>Autor:</label>
+          <input type="text" name="autor" required>
+        </div>
+        <div>
+          <label>Precio:</label>
+          <input type="number" step="0.01" name="precio" required>
+        </div>
+        <div>
+          <label>Descripción:</label><br>
+          <textarea name="descripcion" rows="4" cols="40"></textarea>
+        </div>
+        <button type="submit">Guardar</button>
+      </form>
+
+      <p><a href="/books">Volver a la lista de libros</a></p>
+      <p><a href="/">Volver al inicio</a></p>
+    `
+  );
+
+  res.send(html);
+});
+
+// ─────────── GUARDAR LIBRO (POST /books/new) ───────────
+app.post('/books/new', async (req, res) => {
+  const { titulo, autor, precio, descripcion } = req.body;
+
+  try {
+    await Book.create({
+      titulo,
+      autor,
+      precio,
+      descripcion,
+    });
+
+    res.redirect('/books');
+  } catch (err) {
+    console.error('Error al crear libro:', err);
+    const html = pageTemplate(
+      'Error',
+      `
+        <h1>Error al crear libro</h1>
+        <p>${err.message}</p>
+        <p><a href="/books/new">Volver al formulario</a></p>
       `
     );
     res.status(500).send(html);
