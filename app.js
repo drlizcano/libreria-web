@@ -5,7 +5,6 @@ const session = require('express-session');
 const flash = require('connect-flash');
 const path = require('path');
 const helmet = require('helmet');
-const csrf = require('csurf');
 
 const { initDb } = require('./models');
 const authRoutes = require('./routes/authRoutes');
@@ -35,13 +34,9 @@ app.use(
 
 app.use(flash());
 
-// CSRF
-const csrfProtection = csrf();
-app.use(csrfProtection);
-
-// Variables globales
+// Variables globales (sin CSRF ahora)
 app.use((req, res, next) => {
-  res.locals.csrfToken = req.csrfToken();
+  res.locals.csrfToken = ''; // ya no usamos csurf
   res.locals.mensaje = req.flash('mensaje');
   res.locals.error = req.flash('error');
   res.locals.user = req.session.user || null;
@@ -57,7 +52,7 @@ app.get('/', (req, res) => {
   res.render('layout', {
     title: 'Inicio',
     body: `
-      <h1>Bienvenido al sistema de librería</h1>
+      <h2>Bienvenido al sistema de librería</h2>
       <p>Inicia sesión o regístrate para gestionar los libros.</p>
     `
   });
@@ -68,15 +63,15 @@ initDb()
   .then(() => {
     const PORT = process.env.PORT || 3000;
 
-    console.log("Base de datos inicializada correctamente");
+    console.log('Base de datos sincronizada correctamente');
+    console.log('Base de datos inicializada correctamente');
 
     app.listen(PORT, () => {
       console.log(`Servidor escuchando en puerto ${PORT}`);
     });
   })
   .catch(err => {
-    console.error("🔥 ERROR INICIALIZANDO LA BASE DE DATOS 🔥");
+    console.error('🔥 ERROR INICIALIZANDO LA BASE DE DATOS 🔥');
     console.error(err);
-    process.exit(1); // <--- Esto obliga a Render a mostrar el error
+    process.exit(1);
   });
-
