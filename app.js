@@ -14,13 +14,21 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// ─────────── Motor de vistas y estáticos (para tus páginas de libros) ───────────
+// 🔥 SIEMPRE DEFINIR "user" PARA LAS VISTAS EJS (para layout.ejs, libros, etc.)
+app.use((req, res, next) => {
+  if (typeof res.locals.user === 'undefined') {
+    res.locals.user = null;
+  }
+  next();
+});
+
+// ─────────── Motor de vistas y estáticos ───────────
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ─────────── Función para HTML simple ───────────
+// ─────────── Función para HTML simple (login/registro) ───────────
 function pageTemplate(title, bodyContent) {
   return `
     <!doctype html>
@@ -99,8 +107,8 @@ app.post('/auth/login', async (req, res) => {
       );
     }
 
-    // Aquí podrías guardar sesión si quisieras.
-    // Por ahora, si todo está ok, te envío a /books
+    // Aquí podrías guardar algo en sesión si quisieras.
+    // Por ahora simplemente redirigimos al listado de libros.
     res.redirect('/books');
   } catch (err) {
     console.error('Error en login:', err);
