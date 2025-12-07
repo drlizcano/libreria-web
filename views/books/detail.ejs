@@ -1,0 +1,12 @@
+<%- include('../layout', {
+  title: 'Detalle de libro',
+  body: `
+    <h2>${book.titulo}</h2>
+    <p><strong>Autor:</strong> ${book.autor}</p>
+    <p><strong>Género:</strong> ${book.genero || ''}</p>
+    <p><strong>Precio:</strong> ${book.precio}</p>
+    <p><strong>Descripción:</strong></p>
+    <p>${book.descripcion || ''}</p>
+    <a href="/books">Volver al listado</a>
+  `
+}) %>
