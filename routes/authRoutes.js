@@ -1,80 +1,95 @@
 // routes/authRoutes.js
 const express = require('express');
-const router = express.Router();
 const bcrypt = require('bcrypt');
-const { User } = require('../models'); // 👈 lo sacamos de models/index.js
+const router = express.Router();
 
-// GET /auth/login  → muestra formulario de login
+const { User } = require('../models'); // models/index.js exporta { User, Book }
+
+// GET /auth/login → muestra formulario de inicio de sesión
 router.get('/login', (req, res) => {
-  res.render('login', { error: null });
+  res.render('login', {
+    error: null,
+    user: res.locals.user, // por si el layout lo usa
+  });
 });
 
-// GET /auth/register  → muestra formulario de registro
+// GET /auth/register → muestra formulario de registro
 router.get('/register', (req, res) => {
-  res.render('register', { error: null });
+  res.render('register', {
+    error: null,
+    user: res.locals.user,
+  });
 });
 
-// POST /auth/register  → registra usuario nuevo
+// POST /auth/register → registrar nuevo usuario
 router.post('/register', async (req, res) => {
   const { nombre, email, password } = req.body;
 
   try {
-    // ¿ya existe el correo?
-    const existingUser = await User.findOne({ where: { email } }); // 👈 Sequelize
+    // Verificar si ya existe el correo
+    const existingUser = await User.findOne({ where: { email } });
+
     if (existingUser) {
       return res.render('register', {
         error: 'El correo ya está registrado',
+        user: res.locals.user,
       });
     }
 
-    // encriptar contraseña
+    // Encriptar contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // crear usuario
+    // Crear usuario
     await User.create({
       nombre,
       email,
       password: hashedPassword,
     });
 
-    // redirigir al login
+    // Redirigir al login después de registrar
     res.redirect('/auth/login');
   } catch (err) {
     console.error('Error en registro:', err);
     res.status(500).render('register', {
       error: 'Error en el servidor. Intenta nuevamente.',
+      user: res.locals.user,
     });
   }
 });
 
-// POST /auth/login  → inicia sesión
+// POST /auth/login → iniciar sesión
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // buscar usuario por email
-    const user = await User.findOne({ where: { email } }); // 👈 Sequelize
+    // Buscar usuario por email
+    const user = await User.findOne({ where: { email } });
 
     if (!user) {
       return res.render('login', {
         error: 'Usuario no encontrado',
+        user: res.locals.user,
       });
     }
 
-    // comparar contraseña
+    // Comparar contraseña
     const match = await bcrypt.compare(password, user.password);
+
     if (!match) {
       return res.render('login', {
         error: 'Contraseña incorrecta',
+        user: res.locals.user,
       });
     }
 
-    // aquí podrías guardar datos en sesión, por ahora redirigimos a libros
-    res.redirect('/books'); // o donde tengas el listado
+    // Aquí podrías guardar datos en sesión.
+    // De momento solo redirigimos a la página de libros.
+    res.redirect('/books');
   } catch (err) {
     console.error('Error en login:', err);
     res.status(500).render('login', {
       error: 'Error en el servidor. Intenta nuevamente.',
+      user: res.locals.user,
     });
   }
 });
