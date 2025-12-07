@@ -1,12 +1,12 @@
 // config/db.js
+const path = require('path');
 const { Sequelize } = require('sequelize');
 
-// Usaremos SQLite para simplificar el despliegue en Render.
-// Crea un archivo "database.sqlite" en el servidor y lo usa como base de datos.
+// Usamos SQLite porque funciona perfecto en Render sin configuraciones externas
 const sequelize = new Sequelize({
   dialect: 'sqlite',
-  storage: './database.sqlite', // Se creará en la carpeta raíz del proyecto
-  logging: false
+  storage: path.join(__dirname, 'database.sqlite'),
+  logging: false,
 });
 
 module.exports = sequelize;
