@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title><%= title || 'Sistema de librería' %></title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header>
+    <h1>Sistema de Librería</h1>
+
+    <nav>
+      <a href="/">Inicio</a>
+      <a href="/books">Libros</a>
+
+      <% if (!user) { %>
+        <a href="/auth/login">Iniciar sesión</a>
+        <a href="/auth/register">Registrarse</a>
+      <% } else { %>
+        <span>Hola, <%= user.nombre %></span>
+        <a href="/auth/logout">Cerrar sesión</a>
+      <% } %>
+    </nav>
+
+    <% if (mensaje && mensaje.length) { %>
+      <p class="flash success"><%= mensaje %></p>
+    <% } %>
+
+    <% if (error && error.length) { %>
+      <p class="flash error"><%= error %></p>
+    <% } %>
+  </header>
+
+  <main>
+    <!-- 👇 AQUÍ SE IMPRIME EL CONTENIDO QUE MANDAS DESDE app.js -->
+    <% if (body) { %>
+      <%- body %>
+    <% } else if (bodyContent) { %>
+      <%- bodyContent %>
+    <% } %>
+  </main>
+</body>
+</html>
