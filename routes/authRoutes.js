@@ -1,110 +1,82 @@
 // routes/authRoutes.js
 const express = require('express');
-const bcrypt = require('bcrypt');
-const User = require('../models/User');
-
 const router = express.Router();
+const bcrypt = require('bcrypt');
+const { User } = require('../models'); // 👈 lo sacamos de models/index.js
 
-/**
- * Página de registro
- */
-router.get('/register', (req, res) => {
-  res.render('register', {
-    title: 'Registrarse',
-    error: req.flash('error'),
-    mensaje: req.flash('mensaje'),
-    user: req.session.user || null
-  });
+// GET /auth/login  → muestra formulario de login
+router.get('/login', (req, res) => {
+  res.render('login', { error: null });
 });
 
-/**
- * Registrar usuario
- */
+// GET /auth/register  → muestra formulario de registro
+router.get('/register', (req, res) => {
+  res.render('register', { error: null });
+});
+
+// POST /auth/register  → registra usuario nuevo
 router.post('/register', async (req, res) => {
   const { nombre, email, password } = req.body;
 
   try {
-    // Verificar si ya existe
-    const existe = await User.findOne({ where: { email } });
-    if (existe) {
-      req.flash('error', 'El correo ya está registrado');
-      return res.redirect('/auth/register');
+    // ¿ya existe el correo?
+    const existingUser = await User.findOne({ where: { email } }); // 👈 Sequelize
+    if (existingUser) {
+      return res.render('register', {
+        error: 'El correo ya está registrado',
+      });
     }
 
-    // Encriptar contraseña
-    const hashed = await bcrypt.hash(password, 10);
+    // encriptar contraseña
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Crear usuario
+    // crear usuario
     await User.create({
       nombre,
       email,
-      password: hashed
+      password: hashedPassword,
     });
 
-    req.flash('mensaje', 'Registro exitoso, ahora inicia sesión');
+    // redirigir al login
     res.redirect('/auth/login');
   } catch (err) {
-    console.error('❌ Error registrando usuario:', err);
-    req.flash('error', 'Ocurrió un error al registrar');
-    res.redirect('/auth/register');
+    console.error('Error en registro:', err);
+    res.status(500).render('register', {
+      error: 'Error en el servidor. Intenta nuevamente.',
+    });
   }
 });
 
-/**
- * Página de login
- */
-router.get('/login', (req, res) => {
-  res.render('login', {
-    title: 'Iniciar sesión',
-    error: req.flash('error'),
-    mensaje: req.flash('mensaje'),
-    user: req.session.user || null
-  });
-});
-
-/**
- * Procesar login
- */
+// POST /auth/login  → inicia sesión
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const usuario = await User.findOne({ where: { email } });
+    // buscar usuario por email
+    const user = await User.findOne({ where: { email } }); // 👈 Sequelize
 
-    if (!usuario) {
-      req.flash('error', 'Credenciales incorrectas');
-      return res.redirect('/auth/login');
+    if (!user) {
+      return res.render('login', {
+        error: 'Usuario no encontrado',
+      });
     }
 
-    const coincide = await bcrypt.compare(password, usuario.password);
-    if (!coincide) {
-      req.flash('error', 'Credenciales incorrectas');
-      return res.redirect('/auth/login');
+    // comparar contraseña
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.render('login', {
+        error: 'Contraseña incorrecta',
+      });
     }
 
-    // Guardar sesión
-    req.session.user = {
-      id: usuario.id,
-      nombre: usuario.nombre,
-      email: usuario.email
-    };
-
-    req.flash('mensaje', 'Sesión iniciada correctamente');
-    res.redirect('/books');
+    // aquí podrías guardar datos en sesión, por ahora redirigimos a libros
+    res.redirect('/books'); // o donde tengas el listado
   } catch (err) {
-    console.error('❌ Error iniciando sesión:', err);
-    req.flash('error', 'Ocurrió un error al iniciar sesión');
-    res.redirect('/auth/login');
+    console.error('Error en login:', err);
+    res.status(500).render('login', {
+      error: 'Error en el servidor. Intenta nuevamente.',
+    });
   }
-});
-
-/**
- * Cerrar sesión
- */
-router.get('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/');
-  });
 });
 
 module.exports = router;

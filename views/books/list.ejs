@@ -1,0 +1,40 @@
+<%- include('../layout', {
+  title: 'Libros',
+  body: `
+    <h2>Listado de libros</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Título</th>
+          <th>Autor</th>
+          <th>Género</th>
+          <th>Precio</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${books.map(b => `
+          <tr>
+            <td>${b.titulo}</td>
+            <td>${b.autor}</td>
+            <td>${b.genero || ''}</td>
+            <td>${b.precio}</td>
+            <td>
+              <a href="/books/${b.id}">Ver</a>
+              ${user && user.rol === 'admin'
+                ? `
+                  <a href="/books/${b.id}/edit">Editar</a>
+                  <form action="/books/${b.id}/delete" method="POST" style="display:inline;">
+                    <input type="hidden" name="_csrf" value="${csrfToken}">
+                    <button type="submit" onclick="return confirm('¿Eliminar libro?')">Eliminar</button>
+                  </form>
+                `
+                : ''
+              }
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `
+}) %>
