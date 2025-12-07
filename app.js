@@ -5,8 +5,7 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 
 const { initDb } = require('./config/db');
-const { User } = require('./models');      // models/index.js exporta { User, Book }
-const bookRoutes = require('./routes/bookRoutes');
+const { User, Book } = require('./models');  // 👈 ahora también importamos Book
 
 const app = express();
 
@@ -14,7 +13,7 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// 🔥 SIEMPRE DEFINIR "user" PARA LAS VISTAS EJS (para layout.ejs, libros, etc.)
+// Definir "user" para las vistas EJS (por si luego las vuelves a usar)
 app.use((req, res, next) => {
   if (typeof res.locals.user === 'undefined') {
     res.locals.user = null;
@@ -22,13 +21,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// ─────────── Motor de vistas y estáticos ───────────
+// ─────────── Motor de vistas y estáticos (ya no lo usaremos para /books, pero no estorba) ───────────
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ─────────── Función para HTML simple (login/registro) ───────────
+// ─────────── Función para HTML simple ───────────
 function pageTemplate(title, bodyContent) {
   return `
     <!doctype html>
@@ -107,8 +106,8 @@ app.post('/auth/login', async (req, res) => {
       );
     }
 
-    // Aquí podrías guardar algo en sesión si quisieras.
-    // Por ahora simplemente redirigimos al listado de libros.
+    // Si quisieras, aquí guardarías sesión.
+    // Por ahora, al iniciar sesión correctamente → lista de libros.
     res.redirect('/books');
   } catch (err) {
     console.error('Error en login:', err);
@@ -184,8 +183,52 @@ app.post('/auth/register', async (req, res) => {
   }
 });
 
-// ─────────── RUTAS DE LIBROS (tu sistema original) ───────────
-app.use('/books', bookRoutes);
+// ─────────── LISTA DE LIBROS (SIN EJS) ───────────
+app.get('/books', async (req, res) => {
+  console.log('GET /books');
+
+  try {
+    const books = await Book.findAll();
+
+    const listItems = books
+      .map(
+        (b) => `
+          <li>
+            <strong>${b.titulo || b.title || 'Sin título'}</strong><br>
+            Autor: ${b.autor || b.author || 'Desconocido'}<br>
+            Precio: ${b.precio || b.price || 'N/D'}
+          </li>
+        `
+      )
+      .join('');
+
+    const html = pageTemplate(
+      'Libros - Librería Web',
+      `
+        <h1>Lista de libros</h1>
+        ${
+          books.length === 0
+            ? '<p>No hay libros registrados.</p>'
+            : `<ul>${listItems}</ul>`
+        }
+        <p><a href="/">Volver al inicio</a></p>
+      `
+    );
+
+    res.send(html);
+  } catch (err) {
+    console.error('Error al obtener libros:', err);
+    const html = pageTemplate(
+      'Error',
+      `
+        <h1>Error al obtener libros</h1>
+        <p>${err.message}</p>
+        <p><a href="/">Volver al inicio</a></p>
+      `
+    );
+    res.status(500).send(html);
+  }
+});
 
 // ─────────── Iniciar BD y servidor ───────────
 const PORT = process.env.PORT || 3000;
